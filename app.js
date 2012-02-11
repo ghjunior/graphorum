@@ -3,7 +3,7 @@ var express = require('express');
 var app = express.createServer(express.logger());
 
 app.get('/', function(request, response) {
-  response.send('Hello World! ' + process.env.NEO4J_REST_URL);
+  response.send('Hello Graphorum!');
 });
 
 var port = process.env.PORT || 3000;
@@ -12,7 +12,7 @@ app.listen(port, function() {
 });
 
 /*var neo4j = require('neo4j');
-var db = new neo4j.GraphDatabase('http://localhost:7474');
+var db = new neo4j.GraphDatabase(process.env.NEO4J_REST_URL);
 
 db.getNodeById(1, function(err, res) {
   if (err) {
