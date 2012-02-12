@@ -1,0 +1,13 @@
+@color: #00B7FF;
+
+.rounded-corners (@radius: 5px) {
+  border-radius: @radius;
+  -webkit-border-radius: @radius;
+  -moz-border-radius: @radius;
+}
+
+body { padding: 50px; font: 14px "Lucida Grande", Helvetica, Arial, sans-serif; }
+
+a { color: @color; }
+
+footer { .rounded-corners(10px); }

@@ -1,36 +1,44 @@
-var express = require('express');
+/**
+ * Graphorum
+ */
 
-var app = express.createServer(express.logger());
+var express = require('express')
+  , neo4j = require('neo4j')
+  , db;
 
-app.get('/', function(request, response) {
-  response.send('Hello Graphorum!');
+var app = module.exports = express.createServer();
+
+
+// Configuration
+
+app.configure(function(){
+  app.register('.html', require('ejs'));
+  app.set('views', __dirname + '/views');
+  app.set('view engine', 'html');
+  app.set('view options', { layout: false });
+  app.use(express.bodyParser());
+  app.use(express.methodOverride());
+  app.use(app.router);
+  app.use(express.static(__dirname + '/public'));
+});
+
+app.configure('development', function(){
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+  db = new neo4j.GraphDatabase('http://localhost:7474');
+});
+
+app.configure('production', function(){
+  app.use(express.errorHandler());
+  db = new neo4j.GraphDatabase(process.env.NEO4J_REST_URL);
+});
+
+
+// Routes
+
+app.get('/', function(req, res){
+  res.render('index', { title: 'Graphorum' });
 });
 
 var port = process.env.PORT || 3000;
-app.listen(port, function() {
-  console.log("Listening on " + port);
-});
-
-/*var neo4j = require('neo4j');
-var db = new neo4j.GraphDatabase(process.env.NEO4J_REST_URL);
-
-db.getNodeById(1, function(err, res) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log(res);
-  }
-});
-
-db.getRelationshipById(1, function(err, res) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log(res);
-  }
-});
-
-var query = "START ghjunior=node:node_auto_index(username = 'ghjunior') \
-RETURN ghjunior";
-
-db.query(function(err, res) { console.log(res) }, query);*/
+app.listen(port);
+console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
