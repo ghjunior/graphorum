@@ -4,6 +4,7 @@
 
 var express = require('express')
   , neo4j = require('neo4j')
+  , markdown = require('markdown')
   , db;
 
 var app = module.exports = express.createServer();
