@@ -6,6 +6,7 @@
       "express": "2.5.8"
     , "ejs": "0.6.1"
     , "neo4j": "0.2.4"
+    , "everyauth": "0.2.30"
     , "markdown": "0.3.1"
   }
 }

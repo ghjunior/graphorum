@@ -1,39 +1,19 @@
-<html>
+<div id="viz"></div>
 
-<head>
-  <title><%- title %></title>
-  <link rel="stylesheet/less" type="text/css" href="css/styles.less">
+<script type="text/javascript">
 
-  <script src="js/less-1.2.1.min.js" type="text/javascript"></script>
-  <script src="js/d3.js" type="text/javascript"></script>
-</head>
+  var sampleSVG = d3.select("#viz")
+      .append("svg:svg")
+      .attr("width", 100)
+      .attr("height", 100);    
 
-<body>
-
-  <header>
-    <h1>Graphorum</h1>
-  </header>
-
-  <div id="viz"></div>
+  sampleSVG.append("svg:circle")
+      .style("stroke", "gray")
+      .style("fill", "white")
+      .attr("r", 40)
+      .attr("cx", 50)
+      .attr("cy", 50)
+      .on("mouseover", function(){d3.select(this).style("fill", "aliceblue");})
+      .on("mouseout", function(){d3.select(this).style("fill", "white");});
   
-  <script type="text/javascript">
-
-    var sampleSVG = d3.select("#viz")
-        .append("svg:svg")
-        .attr("width", 100)
-        .attr("height", 100);    
-
-    sampleSVG.append("svg:circle")
-        .style("stroke", "gray")
-        .style("fill", "white")
-        .attr("r", 40)
-        .attr("cx", 50)
-        .attr("cy", 50)
-        .on("mouseover", function(){d3.select(this).style("fill", "aliceblue");})
-        .on("mouseout", function(){d3.select(this).style("fill", "white");});
-    
-  </script>
-
-</body>
-
-</html>
+</script>
