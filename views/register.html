@@ -7,8 +7,8 @@
 <% } %>
 
 <form action="/register" method="post">
-  <input type="text" name="<%- everyauth.password.loginFormFieldName %>" placeholder="username" />
-  <input type="text" name="email" placeholder="email" />
+  <input type="text" name="<%- everyauth.password.loginFormFieldName %>" placeholder="username" value="<%= userParams[everyauth.password.loginFormFieldName] %>" />
+  <input type="text" name="email" placeholder="email" value="<%= userParams['email'] %>" />
   <input type="password" name="<%- everyauth.password.passwordFormFieldName %>" placeholder="password" />
   <input type="submit" />
 </form>

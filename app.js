@@ -75,15 +75,21 @@ everyauth.password
         user.password = hash;
         user.username = newUserAttributes.login;
 
-        var node = db.createNode(user);
+        db.getIndexedNode('users', 'username', user.username, function(err, result) {
+          if (result) {
+            return promise.fulfill(['Username already registered.']);
+          } else {
+            var node = db.createNode(user);
 
-        node.save(function (err) {
-          if (err) return promise.fulfill([err]);
-          node.index('users', 'username', node.data.username, function(err) {
-            if (err) return promise.fulfill([err]);
-            user.id = node.id;
-            promise.fulfill(user);
-          });
+            node.save(function (err) {
+              if (err) return promise.fulfill([err]);
+              node.index('users', 'username', node.data.username, function(err) {
+                if (err) return promise.fulfill([err]);
+                user.id = node.id;
+                promise.fulfill(user);
+              }, true);
+            });
+          }
         });
 
       });
@@ -92,20 +98,20 @@ everyauth.password
     return promise;
 
   })
-  .registerSuccessRedirect('/'); // Where to redirect to after a successful registration
+  .registerSuccessRedirect('/');
 
 
 function validateRegistration(newUserAttributes) {
   var errors = [];
 
   try {
-    check(newUserAttributes.login, 'Please enter a valid username (1-20 chars).').len(1, 20).isString();
+    check(newUserAttributes.login, 'Please enter a valid username (2-20 chars, alphanumeric only).').is(/^[A-Za-z0-9_]{2,20}$/);
   } catch (error) {
     errors.push(error.message);
   }
 
   try {
-    check(newUserAttributes.password, 'Please enter a valid password (6-20 chars).').len(6, 20).isString();
+    check(newUserAttributes.password, 'Please enter a valid password (6-20 chars).').len(6, 20);
   } catch (error) {
     errors.push(error.message);
   }

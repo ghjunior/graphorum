@@ -1,4 +1,10 @@
-<% if ('undefined' !== typeof errors && errors.length) { %> <p>login error</p> <% } %>
+<% if ('undefined' !== typeof errors && errors.length) { %>
+  <ul>
+  <% for (var error in errors) { %>
+    <li><%= errors[error] %></li>
+  <% } %>
+  </ul>
+<% } %>
 
 <form action="/login" method="post">
   <input type="text" name="<%- everyauth.password.loginFormFieldName %>" placeholder="username" />
