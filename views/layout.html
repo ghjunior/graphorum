@@ -10,12 +10,11 @@
 
 <body>
 
-  <header>
-    <h1>Graphorum</h1>
-    <% if (everyauth.loggedIn) { %> <p>logged in as <%- everyauth.user.login %></p> <% } %>
-  </header>
+  <%- partial('partials/header') %>
 
   <%- body %>
+
+  <%- partial('partials/footer') %>
 
 </body>
 

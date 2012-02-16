@@ -1,0 +1,16 @@
+<header>
+  <h1><a href="/">Graphorum</a></h1>
+  
+  <% if (everyauth.loggedIn) { %>
+  <p>logged in as <%= everyauth.user.username %></p>
+  <ul>
+    <li><a href="/logout">logout</a></li>
+  </ul>
+  <% } else { %>
+  <ul>
+    <li><a href="/login">login</a></li>
+    <li><a href="/register">register</a></li>
+  </ul>
+  <% } %>
+  
+</header>

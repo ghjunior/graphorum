@@ -7,125 +7,121 @@ var everyauth = require('everyauth');
 var express = require('express')
   , neo4j = require('neo4j')
   , markdown = require('markdown')
+  , _und = require('underscore')
+  , bcrypt = require('bcrypt')
+  , check = require('validator').check
+  , sanitize = require('validator').sanitize
   , db;
-
-var usersById = {};
-var nextUserId = 0;
-
-function addUser (source, sourceUser) {
-  var user;
-  if (arguments.length === 1) { // password-based
-    user = sourceUser = source;
-    user.id = ++nextUserId;
-    return usersById[nextUserId] = user;
-  } else { // non-password-based
-    user = usersById[++nextUserId] = {id: nextUserId};
-    user[source] = sourceUser;
-  }
-  return user;
-}
-
-var usersByLogin = {
-  'brian@example.com': addUser({ login: 'brian@example.com', password: 'password'})
-};
 
 everyauth.everymodule
   .findUserById( function (id, callback) {
-    callback(null, usersById[id]);
+    var node = db.getNodeById(id, function(err, user) {
+      if (err) callback(err);
+      callback(null, user.data);
+    });
   });
 
 everyauth.password
-  .getLoginPath('/login') // Uri path to the login page
-  .postLoginPath('/login') // Uri path that your login form POSTs to
+  .getLoginPath('/login')
+  .postLoginPath('/login')
   .loginView('login')
+  .loginFormFieldName('username')
+  .extractExtraRegistrationParams( function (req) {
+    return {
+      email: req.body.email
+    };
+  })
   .authenticate( function (login, password) {
-    // Either, we return a user or an array of errors if doing sync auth.
-    // Or, we return a Promise that can fulfill to promise.fulfill(user) or promise.fulfill(errors)
-    // `errors` is an array of error message strings
-    //
-    // e.g., 
-    // Example 1 - Sync Example
-    // if (usersByLogin[login] && usersByLogin[login].password === password) {
-    //   return usersByLogin[login];
-    // } else {
-    //   return ['Login failed'];
-    // }
-    //
-    // Example 2 - Async Example
-    // var promise = this.Promise()
-    // YourUserModel.find({ login: login}, function (err, user) {
-    //   if (err) return promise.fulfill([err]);
-    //   promise.fulfill(user);
-    // }
-    // return promise;
+    
+    var promise = this.Promise();
 
-    var errors = [];
-    if (!login) errors.push('Missing login');
-    if (!password) errors.push('Missing password');
-    if (errors.length) return errors;
-    var user = usersByLogin[login];
-    if (!user) return ['Login failed'];
-    if (user.password !== password) return ['Login failed'];
-    return user;
+    var node = db.getIndexedNode('users', 'username', login, function(err, result) {
+      if (err) return promise.fulfill([err]);
+      bcrypt.compare(password, result.data.password, function(err, res) {
+        if (err) return promise.fulfill([err]);
+        if (res == true) {
+          var user = _und.extend({ id: result.id }, result.data);
+          promise.fulfill(user);
+        } else {
+          return promise.fulfill(['Login failed, bad password']);
+        }
+      });
+    });
+
+    return promise;
 
   })
-  .loginSuccessRedirect('/') // Where to redirect to after a login
-
-    // If login fails, we render the errors via the login view template,
-    // so just make sure your loginView() template incorporates an `errors` local.
-    // See './example/views/login.jade'
-
-  .getRegisterPath('/register') // Uri path to the registration page
-  .postRegisterPath('/register') // The Uri path that your registration form POSTs to
+  .loginSuccessRedirect('/')
+  .getRegisterPath('/register')
+  .postRegisterPath('/register')
   .registerView('register')
   .validateRegistration( function (newUserAttributes) {
-    // Validate the registration input
-    // Return undefined, null, or [] if validation succeeds
-    // Return an array of error messages (or Promise promising this array)
-    // if validation fails
-    //
-    // e.g., assuming you define validate with the following signature
-    // var errors = validate(login, password, extraParams);
-    // return errors;
-    //
-    // The `errors` you return show up as an `errors` local in your jade template
 
-    var errors = [];
-    var login = newUserAttributes.login;
-    if (usersByLogin[login]) errors.push('Login already taken');
+    var errors = validateRegistration(newUserAttributes);
     return errors;
 
   })
   .registerUser( function (newUserAttributes) {
-    // This step is only executed if we pass the validateRegistration step without
-    // any errors.
-    //
-    // Returns a user (or a Promise that promises a user) after adding it to
-    // some user store.
-    //
-    // As an edge case, sometimes your database may make you aware of violation
-    // of the unique login index, so if this error is sent back in an async
-    // callback, then you can just return that error as a single element array
-    // containing just that error message, and everyauth will automatically handle
-    // that as a failed registration. Again, you will have access to this error via
-    // the `errors` local in your register view jade template.
-    // e.g.,
-    // var promise = this.Promise();
-    // User.create(newUserAttributes, function (err, user) {
-    //   if (err) return promise.fulfill([err]);
-    //   promise.fulfill(user);
-    // });
-    // return promise;
-    //
-    // Note: Index and db-driven validations are the only validations that occur 
-    // here; all other validations occur in the `validateRegistration` step documented above.
 
-    var login = newUserAttributes[this.loginKey()];
-    return usersByLogin[login] = addUser(newUserAttributes);
+    var promise = this.Promise();
+
+    bcrypt.genSalt(10, function(err, salt) {
+      if (err) return promise.fulfill([err]); 
+      bcrypt.hash(newUserAttributes.password, salt, function(err, hash) {
+        if (err) return promise.fulfill([err]);
+
+        var user = _und.clone(newUserAttributes);
+        delete user.login;
+        user.password = hash;
+        user.username = newUserAttributes.login;
+
+        var node = db.createNode(user);
+
+        node.save(function (err) {
+          if (err) return promise.fulfill([err]);
+          node.index('users', 'username', node.data.username, function(err) {
+            if (err) return promise.fulfill([err]);
+            user.id = node.id;
+            promise.fulfill(user);
+          });
+        });
+
+      });
+    });
+
+    return promise;
 
   })
   .registerSuccessRedirect('/'); // Where to redirect to after a successful registration
 
+
+function validateRegistration(newUserAttributes) {
+  var errors = [];
+
+  try {
+    check(newUserAttributes.login, 'Please enter a valid username (1-20 chars).').len(1, 20).isString();
+  } catch (error) {
+    errors.push(error.message);
+  }
+
+  try {
+    check(newUserAttributes.password, 'Please enter a valid password (6-20 chars).').len(6, 20).isString();
+  } catch (error) {
+    errors.push(error.message);
+  }
+
+  try {
+    check(newUserAttributes.email, 'Please enter a valid email.').isEmail();
+  } catch (error) {
+    errors.push(error.message);
+  }
+
+  newUserAttributes.login = sanitize(newUserAttributes.login).xss();
+  newUserAttributes.password = sanitize(newUserAttributes.password).xss();
+  newUserAttributes.email = sanitize(newUserAttributes.email).xss();
+
+  return errors;
+}
 
 var app = module.exports = express.createServer(
     express.bodyParser()
@@ -139,8 +135,6 @@ var app = module.exports = express.createServer(
 
 // Configuration
 
-everyauth.debug = true;
-
 app.configure(function(){
   app.register('.html', require('ejs'));
   app.set('views', __dirname + '/views');
@@ -150,6 +144,7 @@ app.configure(function(){
 app.configure('development', function(){
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
   db = new neo4j.GraphDatabase('http://localhost:7474');
+  everyauth.debug = true;
 });
 
 app.configure('production', function(){
