@@ -1,16 +1,30 @@
-<header>
-  <h1><a href="/">Graphorum</a></h1>
-  
+<header class="clearfix">
+
+  <h1>Graphorum</h1>
+
   <% if (everyauth.loggedIn) { %>
-  <p>logged in as <%= everyauth.user.username %></p>
-  <ul>
-    <li><a href="/logout">logout</a></li>
+  <ul class="nav pull-right">
+    <li><a href="/logout">Logout</a></li>
   </ul>
   <% } else { %>
-  <ul>
-    <li><a href="/login">login</a></li>
-    <li><a href="/register">register</a></li>
+  <ul class="nav pull-right">
+    <li><a href="/login">Login</a></li>
+    <li><a href="/login" class="last">Register</a></li>
   </ul>
   <% } %>
-  
+
 </header>
+
+<ul class="breadcrumb">
+  <li>
+    <a href="/">Home</a> <span class="divider">/</span>
+  </li>
+  <li>
+    <a href="#">Library</a> <span class="divider">/</span>
+  </li>
+  <li class="active">
+    <a href="#">Data</a>
+  </li>
+</ul>
+
+<section>

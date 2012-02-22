@@ -166,8 +166,10 @@ app.helpers({
 // Routes
 
 app.get('/', function(req, res){
-  res.render('index');
+  res.render('index', { scripts: 'index' });
 });
+
+require('./routes')(app, db);
 
 everyauth.helpExpress(app);
 
