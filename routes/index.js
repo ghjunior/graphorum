@@ -1,6 +1,6 @@
-module.exports = function(app, db) {
+module.exports = function(app, db, middleware) {
   require('fs').readdirSync(__dirname).forEach(function(file) {
     var current = (__filename.lastIndexOf('/') === -1)? __filename : __filename.substr(__filename.lastIndexOf('/') + 1);
-    if (file !== current) require('./' + file)(app, db);
+    if (file !== current) require('./' + file)(app, db, middleware);
   });
 }

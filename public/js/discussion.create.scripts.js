@@ -2,12 +2,12 @@ $(document).ready(function() {
   $("#mytags").tagit();
 
   $('form').submit(function(event) {
-    event.preventDefault();
+    /*event.preventDefault();
     
     var errors = false;
 
     if (errors) return false;
 
-    return true;
+    return true;*/
   });
 });

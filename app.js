@@ -15,9 +15,10 @@ var express = require('express')
 
 everyauth.everymodule
   .findUserById( function (id, callback) {
-    var node = db.getNodeById(id, function(err, user) {
+    var node = db.getNodeById(id, function(err, result) {
       if (err) callback(err);
-      callback(null, user.data);
+      var user = _und.extend({ id: result.id }, result.data);
+      callback(null, user);
     });
   });
 
@@ -162,14 +163,31 @@ app.helpers({
     title: 'Graphorum'
 });
 
+app.dynamicHelpers({
+  scripts: function(req, res) {
+    if (req.method === 'GET') {
+      switch(req.url) {
+        case '/':
+          return 'index';
+        case '/discussion/create':
+          return 'discussion.create';
+        default:
+          return undefined;
+      }
+      return undefined;
+    }
+  }
+});
+
 
 // Routes
 
 app.get('/', function(req, res){
-  res.render('index', { scripts: 'index' });
+  res.render('index');
 });
 
-require('./routes')(app, db);
+var middleware = require('./middleware')(db);
+require('./routes')(app, db, middleware);
 
 everyauth.helpExpress(app);
 
